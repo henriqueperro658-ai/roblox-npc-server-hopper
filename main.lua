@@ -1,15 +1,45 @@
-print("🚀 Script iniciado!")
-
-repeat task.wait() until game:IsLoaded()
-print("✅ Jogo carregado!")
-
+-- Script otimizado para Delta Executor - Blox Fruits
+local StarterGui = game:GetService("StarterGui")
 local npcName = "Janus"
+local found = false
 
-local function serverHop()
-    print("🔄 Iniciando server hop...")
+local function notify(title, text, duration)
+    pcall(function()
+        StarterGui:SetCore("SendNotification", {
+            Title = title,
+            Text = text,
+            Duration = duration or 5
+        })
+    end)
+end
+
+-- Aguarda jogo carregar
+notify("⏳ Iniciando", "Aguardando jogo carregar...", 3)
+repeat task.wait(0.5) until game:IsLoaded()
+
+task.wait(1)
+notify("✅ Jogo Carregado", "Procurando " .. npcName .. "...", 3)
+
+-- Procura o NPC
+task.wait(1)
+for _, obj in ipairs(workspace:GetDescendants()) do
+    if obj:IsA("Model") and obj.Name == npcName then
+        found = true
+        notify("🎉 " .. npcName .. " Encontrado!", "NPC está neste servidor!", 10)
+        break
+    end
+end
+
+-- Se não encontrou, tenta server hop
+if not found then
+    notify("❌ " .. npcName .. " Não Encontrado", "Buscando em outro servidor...", 5)
+    
+    task.wait(2)
+    
     local HttpService = game:GetService("HttpService")
     local TeleportService = game:GetService("TeleportService")
     local PlaceId = game.PlaceId
+    
     local serversUrl = "https://games.roblox.com/v1/games/" .. PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"
     
     local success, result = pcall(function()
@@ -17,41 +47,19 @@ local function serverHop()
     end)
     
     if success and result and result.data then
-        print("📊 Servidores encontrados: " .. #result.data)
         for _, server in ipairs(result.data) do
             if server.playing < server.maxPlayers and server.id ~= game.JobId then
-                print("🌐 Teleportando para servidor: " .. server.id)
+                notify("🌐 Server Hop", "Teleportando...", 3)
+                task.wait(1)
                 pcall(function()
                     TeleportService:TeleportToPlaceInstance(PlaceId, server.id, game.Players.LocalPlayer)
                 end)
-                task.wait(1)
+                break
             end
         end
     else
-        print("❌ Erro ao buscar servidores")
+        notify("⚠️ Erro", "Não foi possível buscar servidores", 5)
     end
+else
+    notify("✨ Concluído", "Script finalizado com sucesso!", 5)
 end
-
-local function checkJanus()
-    print("🔍 Procurando por " .. npcName .. "...")
-    for _, obj in ipairs(workspace:GetDescendants()) do
-        if obj:IsA("Model") and obj.Name == npcName then
-            print("✨ NPC " .. npcName .. " encontrado!")
-            game:GetService("StarterGui"):SetCore("SendNotification", {
-                Title = "NPC Encontrado!",
-                Text = npcName .. " está neste servidor!",
-                Duration = 15
-            })
-            return true
-        end
-    end
-    print("⚠️ " .. npcName .. " não encontrado neste servidor")
-    return false
-end
-
-task.wait(3)
-if not checkJanus() then
-    serverHop()
-end
-
-print("✅ Script finalizado!")
